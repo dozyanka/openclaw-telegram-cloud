@@ -9,9 +9,40 @@ permissions:
   contents: read
 
 jobs:
-  docker-build:
+  verify-and-build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Build
+
+      - name: Repository safety checks
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if git ls-files --error-unmatch .env >/dev/null 2>&1; then
+            echo "ERROR: .env is tracked by Git"
+            exit 1
+          fi
+
+          if git grep -nE '[0-9]{8,12}:AA[A-Za-z0-9_-]{20,}' -- .; then
+            echo "ERROR: possible Telegram bot token found in tracked files"
+            exit 1
+          fi
+
+          if git grep -nE 'C:\\Users\\[^\\[:space:]]+' -- .; then
+            echo "ERROR: local Windows user path found in tracked files"
+            exit 1
+          fi
+
+          grep -F 'openclaw config set tools.deny' start.sh
+          grep -F '["*"]' start.sh
+          grep -F 'openclaw config set gateway.bind loopback' start.sh
+          grep -F 'openclaw config set channels.telegram.groupPolicy disabled' start.sh
+          grep -F 'openclaw config set session.scope per-sender' start.sh
+
+          test -f LICENSE
+          test -f SECURITY.md
+          test -f CHANGELOG.md
+
+      - name: Build Docker image
         run: docker build -t openclaw-telegram-cloud:ci .
