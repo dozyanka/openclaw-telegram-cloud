@@ -1,0 +1,16 @@
+.env
+.env.*
+!.env.example
+.openclaw/
+*.log
+*.sqlite
+*.sqlite3
+*.db
+secrets/
+**/*.key
+**/*.pem
+workspace/USER.md
+workspace/MEMORY.md
+workspace/memory/
+.DS_Store
+Thumbs.db
